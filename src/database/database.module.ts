@@ -11,7 +11,7 @@ import { Order } from '../orders/entities/order.entity';
         type: 'better-sqlite3',
         database: configService.get<string>('database.path'),
         entities: [Order],
-        synchronize: configService.get<string>('nodeEnv') === 'development',
+        synchronize: true,
         logging: configService.get<string>('nodeEnv') === 'development',
       }),
       inject: [ConfigService],
