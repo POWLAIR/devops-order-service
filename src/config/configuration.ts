@@ -20,6 +20,9 @@ export default () => ({
   authService: {
     url: process.env.AUTH_SERVICE_URL || 'http://localhost:8000',
   },
+  productService: {
+    url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:4000',
+  },
   frontend: {
     url: process.env.FRONTEND_URL || 'http://localhost:3001',
   },

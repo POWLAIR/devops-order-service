@@ -1,6 +1,6 @@
 # Order Service
 
-Service de gestion des commandes pour DevOps MicroService App, implémenté avec NestJS, TypeORM et SQLite.
+Service de gestion des commandes pour DevOps MicroService App, implémenté avec NestJS, TypeORM et PostgreSQL.
 
 ## Description
 
@@ -34,14 +34,22 @@ cp .env.example .env
 Le fichier `.env` doit contenir les variables suivantes :
 
 ```env
-DATABASE_PATH=./orders.db
+DB_HOST=postgres
+DB_PORT=5432
+DB_USER=saas_admin
+DB_PASSWORD=dev_password_change_in_prod
+DB_NAME=saas_platform
+REDIS_URL=redis://redis:6379
 JWT_SECRET=your-super-secret-key-change-in-production
 JWT_ALGORITHM=HS256
 PORT=3000
 HOST=0.0.0.0
 NODE_ENV=development
-CORS_ORIGINS=http://localhost:3001,http://localhost:3000
+CORS_ORIGINS=http://localhost:3001
 AUTH_SERVICE_URL=http://localhost:8000
+PRODUCT_SERVICE_URL=http://localhost:4000
+NOTIFICATION_SERVICE_URL=http://localhost:6000
+FRONTEND_URL=http://localhost:3001
 ```
 
 **Important** : 
@@ -185,16 +193,21 @@ order-service/
 
 ## Base de données
 
-Le service utilise SQLite par défaut. Le fichier `orders.db` sera créé automatiquement au premier démarrage.
+Le service utilise PostgreSQL avec une base de données partagée multi-tenant.
 
-**Schéma de la table `orders`** :
-- `id` : UUID (text, PRIMARY KEY)
-- `userId` : ID de l'utilisateur (text, indexé)
-- `items` : JSON array des items (text)
-- `total` : Total de la commande (real)
+**Schéma de la table `orders` (PostgreSQL)** :
+- `id` : UUID (uuid, PRIMARY KEY)
+- `tenantId` : ID du tenant (uuid, indexé)
+- `userId` : ID de l'utilisateur (uuid, indexé)
+- `items` : JSONB array des items (jsonb)
+- `total` : Total de la commande (decimal(10,2))
 - `status` : Status de la commande (text, indexé) : pending, confirmed, shipped, cancelled
 - `createdAt` : Date de création (timestamp)
 - `updatedAt` : Date de mise à jour (timestamp)
+
+**Indexes composites** :
+- Index sur (`tenantId`, `userId`) pour les requêtes filtrées
+- Index sur (`tenantId`, `status`) pour les recherches par statut
 
 ## Développement
 
@@ -220,17 +233,37 @@ Les tests manuels peuvent être effectués via :
 - Les tests d'intégration avec le frontend
 - La documentation Swagger (si configurée)
 
-## Intégration avec l'API Gateway
+## Intégration avec les autres services
+
+### API Gateway (Frontend)
 
 Ce service est conçu pour être utilisé via l'API Gateway (Next.js) qui route les requêtes depuis le frontend.
 
 L'API Gateway doit être configuré avec :
 - `ORDER_SERVICE_URL=http://localhost:3000`
 
+### Product Service
+
+Order Service communique directement avec Product Service pour :
+- Valider la disponibilité des produits : `POST /products/validate-batch`
+- Décrémenter le stock après création de commande : `POST /products/decrement-stock`
+
+Configuration requise :
+- `PRODUCT_SERVICE_URL=http://localhost:4000`
+
+### Notification Service
+
+Le service envoie des notifications de confirmation de commande via :
+- `POST /api/v1/notifications/order-confirmation`
+
+Configuration requise :
+- `NOTIFICATION_SERVICE_URL=http://localhost:6000`
+
 ## Notes
 
-- En production, utilisez une base de données plus robuste (PostgreSQL, MySQL)
+- PostgreSQL est utilisé comme base de données relationnelle
 - Changez la `JWT_SECRET` avec une clé forte et aléatoire
 - Configurez correctement CORS pour les origines autorisées
-- Le calcul du total est automatique à partir des items
+- Le calcul du total est automatique à partir des items validés
+- Communication service-to-service directe avec product-service (bonnes pratiques microservices)
 

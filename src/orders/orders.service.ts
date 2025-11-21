@@ -15,7 +15,7 @@ const SHIPPING_COST = 5.99;
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
-  private readonly frontendUrl: string;
+  private readonly productServiceUrl: string;
   private readonly notificationServiceUrl: string;
 
   constructor(
@@ -24,7 +24,7 @@ export class OrdersService {
     private configService: ConfigService,
     private httpService: HttpService,
   ) {
-    this.frontendUrl = this.configService.get<string>('frontend.url');
+    this.productServiceUrl = this.configService.get<string>('productService.url');
     this.notificationServiceUrl = this.configService.get<string>('NOTIFICATION_SERVICE_URL', 'http://notification-service:6000');
   }
 
@@ -85,7 +85,7 @@ export class OrdersService {
 
     let validationResponse;
     try {
-      const response = await fetch(`${this.frontendUrl}/api/products/validate-batch`, {
+      const response = await fetch(`${this.productServiceUrl}/products/validate-batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ export class OrdersService {
         })),
       };
 
-      const decrementResponse = await fetch(`${this.frontendUrl}/api/products/decrement-stock`, {
+      const decrementResponse = await fetch(`${this.productServiceUrl}/products/decrement-stock`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
