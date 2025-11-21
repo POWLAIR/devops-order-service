@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
 import { Repository } from 'typeorm';
 import { Order, OrderItem, OrderStatus } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -13,14 +14,18 @@ const SHIPPING_COST = 5.99;
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
   private readonly frontendUrl: string;
+  private readonly notificationServiceUrl: string;
 
   constructor(
     @InjectRepository(Order)
     private ordersRepository: Repository<Order>,
     private configService: ConfigService,
+    private httpService: HttpService,
   ) {
     this.frontendUrl = this.configService.get<string>('frontend.url');
+    this.notificationServiceUrl = this.configService.get<string>('NOTIFICATION_SERVICE_URL', 'http://notification-service:6000');
   }
 
   private calculateTotal(items: OrderItem[]): number {
@@ -158,6 +163,42 @@ export class OrdersService {
     } catch (error) {
       console.error('Erreur lors de la décrémentation du stock:', error);
       // Ne pas bloquer la commande
+    }
+
+    // Étape 7: Envoyer notification de confirmation
+    try {
+      await this.httpService.axiosRef.post(
+        `${this.notificationServiceUrl}/api/v1/notifications/order-confirmation`,
+        {
+          email: `user-${userId}@example.com`, // TODO: Récupérer l'email réel depuis user-service
+          order_data: {
+            orderNumber: savedOrder.id,
+            createdAt: savedOrder.createdAt.toISOString(),
+            status: savedOrder.status,
+            items: validatedItems.map(item => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price
+            })),
+            subtotal,
+            tax,
+            shipping,
+            total: savedOrder.total,
+            tenant_id: tenantId
+          },
+          tenant_settings: {
+            name: 'SaaS Platform',
+            email: 'contact@saas-platform.com',
+            url: 'http://localhost:3001'
+          }
+        },
+        { timeout: 5000 }
+      );
+      
+      this.logger.log(`✅ Order confirmation queued for order ${savedOrder.id}`);
+    } catch (error) {
+      this.logger.warn(`⚠️ Failed to send order confirmation: ${error.message}`);
+      // Ne pas bloquer la commande si l'email échoue
     }
 
     return {
