@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { 
+  Entity, 
+  Column, 
+  PrimaryGeneratedColumn, 
+  CreateDateColumn, 
+  UpdateDateColumn, 
+  Index 
+} from 'typeorm';
 
 export interface OrderItem {
   productId: string;
@@ -14,18 +21,24 @@ export enum OrderStatus {
 }
 
 @Entity('orders')
+@Index(['tenantId', 'userId'])
+@Index(['tenantId', 'status'])
 export class Order {
-  @PrimaryColumn('text')
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('text')
+  @Column('uuid')
+  @Index()
+  tenantId: string;
+
+  @Column('uuid')
   @Index()
   userId: string;
 
-  @Column('text')
-  items: string; // JSON string of OrderItem[]
+  @Column('jsonb')
+  items: OrderItem[];
 
-  @Column('real')
+  @Column('decimal', { precision: 10, scale: 2 })
   total: number;
 
   @Column('text', { default: OrderStatus.PENDING })
@@ -38,13 +51,13 @@ export class Order {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Helper methods
+  // Helper methods (for backward compatibility)
   getItems(): OrderItem[] {
-    return JSON.parse(this.items);
+    return this.items;
   }
 
   setItems(items: OrderItem[]): void {
-    this.items = JSON.stringify(items);
+    this.items = items;
   }
 }
 

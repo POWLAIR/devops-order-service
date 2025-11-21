@@ -3,7 +3,12 @@ export default () => ({
   host: process.env.HOST || '0.0.0.0',
   nodeEnv: process.env.NODE_ENV || 'development',
   database: {
-    path: process.env.DATABASE_PATH || './orders.db',
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT, 10) || 5432,
+    username: process.env.DB_USER || 'saas_admin',
+    password: process.env.DB_PASSWORD || 'dev_password',
+    database: process.env.DB_NAME || 'saas_platform',
   },
   jwt: {
     secret: process.env.JWT_SECRET,
@@ -14,6 +19,12 @@ export default () => ({
   },
   authService: {
     url: process.env.AUTH_SERVICE_URL || 'http://localhost:8000',
+  },
+  frontend: {
+    url: process.env.FRONTEND_URL || 'http://localhost:3001',
+  },
+  redis: {
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
   },
 });
 
