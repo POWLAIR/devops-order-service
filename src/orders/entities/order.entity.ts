@@ -45,6 +45,14 @@ export class Order {
   @Index()
   status: OrderStatus;
 
+  @Column('uuid', { nullable: true })
+  @Index()
+  paymentId: string;
+
+  @Column('text', { default: 'unpaid' })
+  @Index()
+  paymentStatus: string; // unpaid, pending, paid, failed, refunded
+
   @CreateDateColumn()
   createdAt: Date;
 

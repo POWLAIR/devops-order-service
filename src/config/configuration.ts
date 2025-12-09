@@ -23,6 +23,9 @@ export default () => ({
   productService: {
     url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:4000',
   },
+  paymentService: {
+    url: process.env.PAYMENT_SERVICE_URL || 'http://localhost:5000',
+  },
   frontend: {
     url: process.env.FRONTEND_URL || 'http://localhost:3001',
   },

@@ -15,7 +15,7 @@ import { Order } from "../orders/entities/order.entity";
         password: configService.get("database.password"),
         database: configService.get("database.database"),
         entities: [Order],
-        synchronize: false, // Désactivé car on utilise des migrations SQL
+        synchronize: true, // Activé pour créer les tables automatiquement
         logging: configService.get<string>("nodeEnv") === "development",
       }),
       inject: [ConfigService],

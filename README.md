@@ -259,6 +259,35 @@ Le service envoie des notifications de confirmation de commande via :
 Configuration requise :
 - `NOTIFICATION_SERVICE_URL=http://localhost:6000`
 
+## Production
+
+### Checklist avant déploiement
+
+- [ ] Changer `JWT_SECRET` avec une clé forte et aléatoire (32+ caractères)
+- [ ] Même `JWT_SECRET` sur tous les microservices
+- [ ] Mot de passe PostgreSQL sécurisé
+- [ ] CORS configuré avec les origines de production uniquement
+- [ ] PostgreSQL avec connexions SSL
+- [ ] Redis avec authentification (si utilisé)
+- [ ] HTTPS activé (TLS/SSL)
+- [ ] Monitoring et alertes (Prometheus, Grafana)
+- [ ] Logs centralisés (ELK, Loki)
+- [ ] Backups automatiques de PostgreSQL
+- [ ] Variables d'environnement configurées sur la plateforme de déploiement
+
+### Variables d'environnement Docker
+
+Configurées dans `docker-compose.yml` :
+```yaml
+DB_HOST=postgres
+DB_PORT=5432
+DB_USER=saas_admin
+DB_PASSWORD=${DB_PASSWORD}
+DB_NAME=saas_platform
+JWT_SECRET=${JWT_SECRET}
+REDIS_URL=redis://redis:6379
+```
+
 ## Notes
 
 - PostgreSQL est utilisé comme base de données relationnelle
@@ -266,4 +295,13 @@ Configuration requise :
 - Configurez correctement CORS pour les origines autorisées
 - Le calcul du total est automatique à partir des items validés
 - Communication service-to-service directe avec product-service (bonnes pratiques microservices)
+- Le service est conçu pour une architecture microservices
+- Multi-tenant avec isolation par `tenant_id`
+
+## Support
+
+Pour toute question ou problème, consultez :
+- Logs du service : `docker logs order-service`
+- Healthcheck : `GET /health` (si disponible)
+- Documentation du projet : [README.md principal](../README.md)
 

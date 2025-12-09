@@ -16,6 +16,7 @@ const SHIPPING_COST = 5.99;
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
   private readonly productServiceUrl: string;
+  private readonly paymentServiceUrl: string;
   private readonly notificationServiceUrl: string;
 
   constructor(
@@ -25,6 +26,7 @@ export class OrdersService {
     private httpService: HttpService,
   ) {
     this.productServiceUrl = this.configService.get<string>('productService.url');
+    this.paymentServiceUrl = this.configService.get<string>('paymentService.url');
     this.notificationServiceUrl = this.configService.get<string>('NOTIFICATION_SERVICE_URL', 'http://notification-service:6000');
   }
 
@@ -32,9 +34,15 @@ export class OrdersService {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }
 
-  async findAll(tenantId: string, userId: string): Promise<any[]> {
+  async findAll(tenantId: string, userId: string, userRole?: string): Promise<any[]> {
+    // Customer : voir uniquement ses commandes (filtre par userId)
+    // Merchant (owner/staff) : voir toutes les commandes du tenant (filtre par tenantId uniquement)
+    const whereCondition = userRole === 'customer' 
+      ? { userId } 
+      : { tenantId };
+    
     const orders = await this.ordersRepository.find({
-      where: { tenantId, userId },
+      where: whereCondition,
       order: { createdAt: 'DESC' },
     });
     return orders.map(order => ({
@@ -71,7 +79,29 @@ export class OrdersService {
       status: order.status,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+      paymentId: order.paymentId,
+      paymentStatus: order.paymentStatus,
     };
+  }
+
+  async updatePaymentStatus(orderId: string, paymentId: string, paymentStatus: string): Promise<Order> {
+    const order = await this.ordersRepository.findOne({ where: { id: orderId } });
+    
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    order.paymentId = paymentId;
+    order.paymentStatus = paymentStatus;
+
+    // Si le paiement est réussi, mettre à jour le statut de la commande
+    if (paymentStatus === 'paid' || paymentStatus === 'succeeded') {
+      order.status = OrderStatus.CONFIRMED;
+    } else if (paymentStatus === 'failed') {
+      order.status = OrderStatus.CANCELLED;
+    }
+
+    return await this.ordersRepository.save(order);
   }
 
   async create(tenantId: string, createOrderDto: CreateOrderDto, userId: string): Promise<any> {
@@ -138,6 +168,9 @@ export class OrdersService {
     order.status = status;
 
     const savedOrder = await this.ordersRepository.save(order);
+    
+    // Note: Le paiement est géré par le frontend qui appelle payment-service avec l'order_id
+    // Le payment-service notifiera ensuite ce service via webhook pour mettre à jour paymentStatus
     
     // Étape 6: Décrémenter le stock
     try {
