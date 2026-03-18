@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache curl
+
+# Installer toutes les dépendances (y compris devDependencies pour @nestjs/cli)
+# Le code source est monté via volume dans docker-compose.dev.yml
+COPY package*.json ./
+RUN npm install
+
+EXPOSE 3000
+
+# nest start --watch surveille les changements TypeScript et redémarre le service
+CMD ["npm", "run", "start:dev"]
