@@ -4,6 +4,7 @@ import { HttpModule } from '@nestjs/axios';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { Order } from './entities/order.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { Order } from './entities/order.entity';
       timeout: 5000,
       maxRedirects: 5,
     }),
+    AuthModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

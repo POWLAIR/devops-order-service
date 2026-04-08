@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, HttpCode, H
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TenantId } from '../common/decorators/tenant-id.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -43,10 +44,10 @@ export class OrdersController {
     return this.ordersService.remove(tenantId, id, user.userId, user.role);
   }
 
+  @Public()
   @Post('webhook/payment-update')
   @HttpCode(HttpStatus.OK)
   async updatePaymentStatus(@Body() paymentWebhookDto: PaymentWebhookDto) {
-    // Ce endpoint est appelé par le payment-service (pas de JWT requis)
     const { orderId, paymentId, paymentStatus } = paymentWebhookDto;
     return this.ordersService.updatePaymentStatus(orderId, paymentId, paymentStatus);
   }
