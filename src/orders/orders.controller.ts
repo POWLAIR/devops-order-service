@@ -19,7 +19,7 @@ export class OrdersController {
 
   @Get(':id')
   findOne(@Param('id') id: string, @TenantId() tenantId: string, @CurrentUser() user: any) {
-    return this.ordersService.findOne(tenantId, id, user.userId);
+    return this.ordersService.findOne(tenantId, id, user.userId, user.role);
   }
 
   @Post()
@@ -34,13 +34,13 @@ export class OrdersController {
     @TenantId() tenantId: string,
     @CurrentUser() user: any,
   ) {
-    return this.ordersService.update(tenantId, id, updateOrderDto, user.userId);
+    return this.ordersService.update(tenantId, id, updateOrderDto, user.userId, user.role);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string, @TenantId() tenantId: string, @CurrentUser() user: any) {
-    return this.ordersService.remove(tenantId, id, user.userId);
+    return this.ordersService.remove(tenantId, id, user.userId, user.role);
   }
 
   @Post('webhook/payment-update')

@@ -52,21 +52,23 @@ export class OrdersService {
       items: order.getItems(),
       total: order.total,
       status: order.status,
+      paymentId: order.paymentId,
+      paymentStatus: order.paymentStatus,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     }));
   }
 
-  async findOne(tenantId: string, id: string, userId: string): Promise<any> {
-    const order = await this.ordersRepository.findOne({ 
-      where: { id, tenantId } 
+  async findOne(tenantId: string, id: string, userId: string, userRole?: string): Promise<any> {
+    const order = await this.ordersRepository.findOne({
+      where: { id, tenantId }
     });
 
     if (!order) {
       throw new NotFoundException('Commande non trouvée');
     }
 
-    if (order.userId !== userId) {
+    if (userRole === 'customer' && order.userId !== userId) {
       throw new ForbiddenException('Vous n\'avez pas accès à cette commande');
     }
 
@@ -248,14 +250,14 @@ export class OrdersService {
     };
   }
 
-  async update(tenantId: string, id: string, updateOrderDto: UpdateOrderDto, userId: string): Promise<any> {
+  async update(tenantId: string, id: string, updateOrderDto: UpdateOrderDto, userId: string, userRole?: string): Promise<any> {
     const order = await this.ordersRepository.findOne({ where: { id, tenantId } });
 
     if (!order) {
       throw new NotFoundException('Commande non trouvée');
     }
 
-    if (order.userId !== userId) {
+    if (userRole === 'customer' && order.userId !== userId) {
       throw new ForbiddenException('Vous n\'avez pas accès à cette commande');
     }
 
@@ -281,14 +283,14 @@ export class OrdersService {
     };
   }
 
-  async remove(tenantId: string, id: string, userId: string): Promise<{ message: string }> {
+  async remove(tenantId: string, id: string, userId: string, userRole?: string): Promise<{ message: string }> {
     const order = await this.ordersRepository.findOne({ where: { id, tenantId } });
 
     if (!order) {
       throw new NotFoundException('Commande non trouvée');
     }
 
-    if (order.userId !== userId) {
+    if (userRole === 'customer' && order.userId !== userId) {
       throw new ForbiddenException('Vous n\'avez pas accès à cette commande');
     }
 
